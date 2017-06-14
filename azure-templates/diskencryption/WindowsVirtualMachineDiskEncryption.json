@@ -8,13 +8,6 @@
                 "description": "Name of the virtual machine"
             }
         },
-        "vmCount": {
-            "defaultValue": 1,
-            "type": "Int",
-            "metadata": {
-                "description": "Number of VMs to deploy"
-            }
-        },
         "aadClientID": {
             "type": "string",
             "metadata": {
@@ -107,16 +100,12 @@
             }
         },
         {
-            "name": "[concat('updatevm', copyindex(1))]",
+            "name": "[concat('updatevm',  parameters('vmName'))]",
             "type": "Microsoft.Resources/deployments",
             "apiVersion": "2015-01-01",
             "dependsOn": [
                 "[resourceId('Microsoft.Compute/virtualMachines/extensions',  parameters('vmName'), variables('extensionName'))]"
             ],
-            "copy": {
-                "name": "virtualMachineLoop",
-                "count": "[parameters('vmCount')]"
-            },
             "properties": {
                 "mode": "Incremental",
                 "templateLink": {
