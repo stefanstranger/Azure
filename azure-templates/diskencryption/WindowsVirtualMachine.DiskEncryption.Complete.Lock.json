@@ -55,7 +55,7 @@
     }
   },
   "variables": {
-    "extensionName": "AzureDiskEncryption",
+    "extensionName": "azurediskencryption",
     "extensionVersion": "1.1",
     "encryptionOperation": "EnableEncryption",
     "keyEncryptionAlgorithm": "RSA-OAEP",
