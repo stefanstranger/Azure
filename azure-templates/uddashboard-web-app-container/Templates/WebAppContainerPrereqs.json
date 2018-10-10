@@ -1,0 +1,125 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "resourceGroupLocation": {
+            "type": "string",
+            "defaultValue": "WestEurope"
+        },
+        "resourceGroupName": {
+            "type": "string",
+            "metadata": {
+                "description": "The name of the Resource Group where to host the Web App Container."
+            }
+        },
+        "appServicePlanName": {
+            "type": "string",
+            "metadata": {
+                "description": "The name of the App Service plan to use for hosting the web app."
+            }
+        },
+        "servicePlanTier": {
+            "type": "string",
+            "allowedValues": [
+                "Basic",
+                "Standard"
+            ],
+            "defaultValue": "Basic",
+            "metadata": {
+                "description": "Tier for Service Plan"
+            }
+        },
+        "servicePlanSku": {
+            "type": "string",
+            "allowedValues": [
+                "B1",
+                "B2",
+                "B3",
+                "S1",
+                "S2",
+                "S3"
+            ],
+            "defaultValue": "B2",
+            "metadata": {
+                "description": "Size for Service Plan"
+            }
+        },
+        "acrName": {
+            "type": "string",
+            "metadata": {
+                "description": "The name of the Azure Container Registry"
+            }
+        }
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Resources/resourceGroups",
+            "apiVersion": "2018-05-01",
+            "location": "[parameters('resourceGroupLocation')]",
+            "name": "[parameters('resourceGroupName')]"
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2017-05-10",
+            "name": "appServicePlanDeployment",
+            "resourceGroup": "[parameters('resourceGroupName')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Resources/resourceGroups/', parameters('resourceGroupName'))]"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "template": {
+                    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                    "contentVersion": "1.0.0.0",
+                    "parameters": {},
+                    "variables": {},
+                    "resources": [
+                        {
+                            "comments": "This is the App Service Plan deployment",
+                            "apiVersion": "2016-09-01",
+                            "name": "[parameters('appServicePlanName')]",
+                            "type": "Microsoft.Web/serverfarms",
+                            "location": "[parameters('resourceGroupLocation')]",
+                            "properties": {
+                                "name": "[parameters('appServicePlanName')]",
+                                "workerSizeId": "1",
+                                "reserved": true,
+                                "numberOfWorkers": "1",
+                                "hostingEnvironment": ""
+                            },
+                            "sku": {
+                                "Tier": "[parameters('servicePlanTier')]",
+                                "Name": "[parameters('servicePlanSku')]"
+                            },
+                            "kind": "linux"
+                        },
+                        {
+                            "type": "Microsoft.ContainerRegistry/registries",
+                            "sku": {
+                                "name": "Premium",
+                                "tier": "Premium"
+                            },
+                            "name": "[parameters('acrName')]",
+                            "apiVersion": "2017-10-01",
+                            "location": "[parameters('resourceGroupLocation')]",
+                            "scale": null,
+                            "properties": {
+                                "adminUserEnabled": true
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    ],
+    "outputs": {
+        "acrNameOutput": {
+            "value": "[parameters('acrName')]",
+            "type": "string"
+        },
+        "ResourceGroupOutput": {
+            "value": "[parameters('resourceGroupName')]",
+            "type": "string"
+        }
+    }
+}

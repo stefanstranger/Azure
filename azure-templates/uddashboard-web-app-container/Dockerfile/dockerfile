@@ -1,0 +1,5 @@
+FROM mcr.microsoft.com/powershell:6.1.0-rc.1-ubuntu-18.04
+RUN pwsh -c "Install-Module universaldashboard -Acceptlicense -Force"
+RUN pwsh -c "Invoke-WebRequest -Uri 'https://gist.githubusercontent.com/stefanstranger/45d8129758eb44b44683c14dba2b8c45/raw/875f69a6f988b8d9632a63c155b9658b4d335fe1/HelloWorldUD-Example.ps1' -Method Get -OutFile /tmp/helloworldud-example.ps1"
+
+CMD [ "pwsh","-command","& ./tmp/helloworldud-example.ps1" ]

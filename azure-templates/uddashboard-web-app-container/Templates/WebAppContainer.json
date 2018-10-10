@@ -1,0 +1,169 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"resourceGroupLocation": {
+			"type": "string",
+			"defaultValue": "WestEurope",
+			"metadata": {
+				"description": "The name of the Resource Group location."
+			}
+		},
+		"resourceGroupName": {
+			"type": "string",
+			"metadata": {
+				"description": "The name of the Resource Group."
+			}
+		},
+		"appServicePlanName": {
+			"type": "string",
+			"metadata": {
+				"description": "The name of the App Service plan to use for hosting the web app."
+			}
+		},
+		"acrName": {
+			"type": "string",
+			"metadata": {
+				"description": "The Name of the Azure Container Registry"
+			}
+		},
+		"siteName": {
+			"type": "string",
+			"metadata": {
+				"description": "Name of azure web app"
+			}
+		},
+		"acrImageName": {
+			"type": "string",
+			"metadata": {
+				"description": "The name of the docker registry"
+			}
+		},
+		"acrUserName": {
+			"type": "string",
+			"metadata": {
+				"description": "User name of the docker registry"
+			}
+		},
+		"acrUserPassword": {
+			"type": "string",
+			"metadata": {
+				"description": "The password of the docker registry"
+			}
+		},
+		"port": {
+			"type": "string",
+			"defaultValue": "8585",
+			"metadata": {
+				"description": "The port of the Azure container Universal Dashboard Container."
+			}
+		},
+		"hostNameSslStates": {
+			"type": "array",
+			"defaultValue": []
+		}
+	},
+	"variables": {
+		"hostingPlanName": "[parameters('appServicePlanName')]",
+		"acrUrl": "[tolower(concat(parameters('acrName'), '.azurecr.io'))]",
+		"linuxFxVersion": "[concat('DOCKER|',variables('acrurl'), '/', parameters('acrImageName'), ':latest')]"
+	},
+	"resources": [
+		{
+			"type": "Microsoft.Resources/resourceGroups",
+			"apiVersion": "2018-05-01",
+			"location": "[parameters('resourceGroupLocation')]",
+			"name": "[parameters('resourceGroupName')]"
+		},
+		{
+			"type": "Microsoft.Resources/deployments",
+			"apiVersion": "2017-05-10",
+			"name": "WebAppContainerDeployment",
+			"resourceGroup": "[parameters('resourceGroupName')]",
+			"dependsOn": [
+				"[resourceId('Microsoft.Resources/resourceGroups/', parameters('resourceGroupName'))]"
+			],
+			"properties": {
+				"mode": "Incremental",
+				"template": {
+					"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+					"contentVersion": "1.0.0.0",
+					"parameters": {},
+					"variables": {},
+					"resources": [
+						{
+							"comments": "This is the Linux web app with the Docker image from Azure Container Registry",
+							"type": "Microsoft.Web/sites",
+							"kind": "app,linux,container",
+							"name": "[parameters('siteName')]",
+							"apiVersion": "2016-03-01",
+							"location": "[parameters('resourceGroupLocation')]",
+							"properties": {
+								"name": "[parameters('siteName')]",
+								"serverFarmId": "[variables('hostingPlanName')]",
+								"hostingEnvironment": "",
+								"clientAffinityEnabled": true,
+								"httpsOnly": true,
+								"siteConfig": {
+									"AlwaysOn": true,
+									"minTlsVersion": "1.2",
+									"ftpsState": "Disabled",
+									"appCommandLine": "",
+									"linuxFxVersion": "[variables('linuxFxVersion')]"
+								},
+								"hostNameSslStates": "[parameters('hostNameSslStates')]"
+							},
+							"resources": [
+								{
+									"name": "appsettings",
+									"type": "config",
+									"apiVersion": "2015-08-01",
+									"dependsOn": [
+										"[resourceId('Microsoft.Web/sites', parameters('siteName'))]"
+									],
+									"properties": {
+										"DOCKER_REGISTRY_SERVER_URL": "[variables('acrUrl')]",
+										"DOCKER_REGISTRY_SERVER_USERNAME": "[parameters('acrUserName')]",
+										"DOCKER_REGISTRY_SERVER_PASSWORD": "[parameters('acrUserPassword')]",
+										"WEBSITES_PORT": "[parameters('port')]"
+									}
+								}
+							]
+						},
+						{
+							"type": "Microsoft.Web/sites/hostNameBindings",
+							"name": "[concat(parameters('siteName'), '/' , if(empty(parameters('hostNameSslStates')),'dummy',parameters('hostNameSslStates')[copyIndex()].name))]",
+							"condition": "[not(empty(parameters('hostNameSslStates')))]",
+							"apiVersion": "2016-03-01",
+							"location": "[parameters('resourceGroupLocation')]",
+							"properties": {},
+							"dependsOn": [
+								"[parameters('siteName')]"
+							],
+							"copy": {
+								"name": "bindingsCopy",
+								"count": "[if(empty(parameters('hostNameSslStates')),1,length(parameters('hostNameSslStates')))]",
+								"mode": "serial",
+								"batchSize": 1
+							}
+						}
+					]
+				}
+			}
+		}
+	],
+	"outputs": {
+		"imageNameOutput": {
+			"value": "[parameters('acrImageName')]",
+			"type": "string"
+		},
+		"dockerRegistryUrlOutput": {
+			"value": "[variables('acrUrl')]",
+			"type": "string"
+		},
+		"linuxFxVersionOutput": {
+			"value": "[variables('linuxFxVersion')]",
+			"type": "string"
+		}
+	}
+}

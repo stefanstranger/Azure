@@ -1,0 +1,1 @@
+These scripts and ARM Templates are being used in the blog post
